@@ -521,6 +521,39 @@ resource "null_resource" "get_auth_config" {
   }
 }
 
+# Template pull secret for ecr
+
+data "template_file" "ecr_pull_secret" {
+template = <<-EOF
+{
+   "auths":{
+      "${var.registry_url}":{
+         "auth":"${var.registry_token}",
+         "email":"spo@redhat.com"
+      }
+   }
+}
+EOF
+}
+
+data "local_file" "ecr_pull_secret_file" {
+  depends_on = [
+    data.ecr_pull_secret
+  ]
+
+  filename =  "${path.module}/temp/ecr_pull_secret.json"
+}
+
+resource "null_resource" "upload_images_to_edge_registry" {
+   count = var.airgapped.enabled ? 1 : 0
+   provisioner "local-exec" {
+     command = "oc image mirror -a "${path.module}/temp/ecr_pull_secret.json" --from-dir="${path.module}/images" 'file://openshift/release:${var.ocp_version}*' ${var.ecr_registry_url} --max-per-registry=1
+   depends_on = [
+     data.local_file.ecr_pull_secret_file,
+     data.template_file.ecr_pull_secret,
+   ]
+}
+
 resource "local_file" "airgapped_registry_upgrades" {
   count    = var.airgapped["enabled"] ? 1 : 0
   filename = "${path.module}/temp/openshift/99_airgapped_registry_upgrades.yaml"
@@ -541,4 +574,6 @@ spec:
     - ${var.airgapped["repository"]}
     source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
 EOF
+}
+
 }

@@ -44,6 +44,9 @@ module "installer" {
   aws_worker_availability_zones = var.aws_azs
   aws_worker_instance_type = var.aws_worker_instance_type
   airgapped = var.airgapped
+  registry_url = var.ecr_registry_url
+  registry_token = var.ecr_registry_auth_token
+  ocp_version = var.ocp_version
 }
 
 module "vpc" {
@@ -133,4 +136,10 @@ module "masters" {
   ec2_ami                  = aws_ami_copy.main.id
   user_data_ign            = module.installer.master_ign
   publish_strategy         = var.aws_publish_strategy
+}
+
+module "ecr" {
+  source = "./ecr"
+
+  ecr_name = "OCP-${var.ocp_version}"
 }
