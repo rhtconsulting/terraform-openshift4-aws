@@ -114,3 +114,17 @@ variable "airgapped" {
     repository = ""
   }
 }
+
+variable "registry_url" {
+  type = string
+  description = "ecr registry url"
+}
+
+variable "registry_token" {
+  type = string
+  description = "ecr registry auth token"
+}
+
+variable "ocp_version" {
+  type = string
+}

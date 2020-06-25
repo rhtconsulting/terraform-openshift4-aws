@@ -134,3 +134,8 @@ variable "airgapped" {
     repository = ""
   }
 }
+
+variable "ocp_version" {
+  type    = string
+  default = ""
+}
