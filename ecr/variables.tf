@@ -1,3 +1,3 @@
-variable "ecr_name" {
+variable "registry_name" {
   default = ""
 }
