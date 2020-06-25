@@ -1,3 +1,3 @@
 variable "registry_name" {
-  default = ""
+  type = string
 }
