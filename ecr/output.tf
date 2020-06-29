@@ -3,7 +3,7 @@ output "ecr_registry_id" {
 }
 
 output "ecr_registry_auth_token" {
-  value = data.aws_ecr_authorization_token.registry_auth_token
+  value = data.aws_ecr_authorization_token.registry_auth_token.authorization_token
 }
 
 output "ecr_registry_url" {

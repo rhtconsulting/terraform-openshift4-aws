@@ -3,6 +3,37 @@ locals {
   infrastructure_id = var.infrastructure_id
 }
 
+# Template pull secret for ecr
+
+data "template_file" "ecr_pull_secret" {
+template = <<-EOF
+{
+   "auths":{
+      "${var.registry_url}":{
+         "auth":"${var.registry_token}",
+         "email":"spo@redhat.com"
+      }
+   }
+}
+EOF
+}
+
+resource "local_file" "ecr_pull_secret_file" {
+  count = var.airgapped.enabled ? 1 : 0
+
+  depends_on = [
+    data.template_file.ecr_pull_secret,
+    null_resource.openshift_client
+  ]
+
+  content = data.template_file.ecr_pull_secret.rendered
+  filename =  "${path.module}/temp/ecr_pull_secret.json"
+
+  provisioner "local-exec" {
+     command = "oc image mirror -a '${path.module}/temp/ecr_pull_secret.json' --from-dir='${path.root}/images' 'file://openshift/release:${var.ocp_version}*' '${var.registry_url}' --max-per-registry=1"
+   }
+}
+
 resource "null_resource" "openshift_installer" {
   provisioner "local-exec" {
     command = <<EOF
@@ -17,6 +48,7 @@ case $(uname -s) in
     ;;
 esac
 EOF
+  
   }
 
   provisioner "local-exec" {
@@ -43,7 +75,7 @@ case $(uname -s) in
     ;;
 esac
 EOF
-  }
+}
 
   provisioner "local-exec" {
     command = "tar zxvf ${path.module}/openshift-client-*-4*.tar.gz -C ${path.module}"
@@ -102,10 +134,10 @@ pullSecret: '${file(var.openshift_pull_secret)}'
 sshKey: '${tls_private_key.installkey.public_key_openssh}'
 %{if var.airgapped["enabled"]}imageContentSources:
 - mirrors:
-  - ${var.airgapped["repository"]}
+  - ${var.registry_url}
   source: quay.io/openshift-release-dev/ocp-release
 - mirrors:
-  - ${var.airgapped["repository"]}
+  - ${var.registry_url}
   source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
 %{endif}
 EOF
@@ -521,39 +553,6 @@ resource "null_resource" "get_auth_config" {
   }
 }
 
-# Template pull secret for ecr
-
-data "template_file" "ecr_pull_secret" {
-template = <<-EOF
-{
-   "auths":{
-      "${var.registry_url}":{
-         "auth":"${var.registry_token}",
-         "email":"spo@redhat.com"
-      }
-   }
-}
-EOF
-}
-
-data "local_file" "ecr_pull_secret_file" {
-  depends_on = [
-    data.ecr_pull_secret
-  ]
-
-  filename =  "${path.module}/temp/ecr_pull_secret.json"
-}
-
-resource "null_resource" "upload_images_to_edge_registry" {
-   count = var.airgapped.enabled ? 1 : 0
-   provisioner "local-exec" {
-     command = "oc image mirror -a "${path.module}/temp/ecr_pull_secret.json" --from-dir="${path.module}/images" 'file://openshift/release:${var.ocp_version}*' ${var.ecr_registry_url} --max-per-registry=1
-   depends_on = [
-     data.local_file.ecr_pull_secret_file,
-     data.template_file.ecr_pull_secret,
-   ]
-}
-
 resource "local_file" "airgapped_registry_upgrades" {
   count    = var.airgapped["enabled"] ? 1 : 0
   filename = "${path.module}/temp/openshift/99_airgapped_registry_upgrades.yaml"
@@ -568,12 +567,10 @@ metadata:
 spec:
   repositoryDigestMirrors:
   - mirrors:
-    - ${var.airgapped["repository"]}
+    - ${var.registry_url}
     source: quay.io/openshift-release-dev/ocp-release
   - mirrors:
-    - ${var.airgapped["repository"]}
+    - ${var.registry_url}
     source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
 EOF
-}
-
 }

@@ -1,6 +1,6 @@
 variable "openshift_pull_secret" {
   type        = string
-  default     = "./openshift_pull_secret.json"
+  default = "./openshift_pull_secret.json"
 }
 
 variable "openshift_installer_url" {

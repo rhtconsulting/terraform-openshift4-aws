@@ -44,8 +44,8 @@ module "installer" {
   aws_worker_availability_zones = var.aws_azs
   aws_worker_instance_type = var.aws_worker_instance_type
   airgapped = var.airgapped
-  registry_url = var.ecr_registry_url
-  registry_token = var.ecr_registry_auth_token
+  registry_url = module.ecr.ecr_registry_url
+  registry_token = module.ecr.ecr_registry_auth_token
   ocp_version = var.ocp_version
 }
 
@@ -141,5 +141,5 @@ module "masters" {
 module "ecr" {
   source = "./ecr"
 
-  ecr_name = "OCP-${var.ocp_version}"
+  registry_name = "ocp-installer"
 }

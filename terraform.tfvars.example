@@ -3,7 +3,7 @@ clustername = "ocp4"
 base_domain = "example.com"
 openshift_pull_secret = "./openshift_pull_secret.json"
 openshift_installer_url = "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest"
-
+ocp_version="4.4.0"
 aws_access_key_id = "AAAA"
 aws_secret_access_key = "AbcDefGhiJkl"
 aws_ami = "ami-06f85a7940faa3217"
@@ -17,4 +17,8 @@ aws_azs = [
   "us-east-1c"
   ]
 aws_region = "us-east-1"
-aws_publish_strategy = "External"
+aws_publish_strategy = "Internal"
+airgapped = {
+  enabled = true
+  repository = "1234567812345678.dkr.ecr.us-east-1.amazonaws.com/ocp435"
+}
